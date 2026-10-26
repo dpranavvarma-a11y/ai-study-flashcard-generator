@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Study Flashcard & Quiz Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+        textarea { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        button { padding: 10px 20px; background: #007BFF; color: white; border: none; cursor: pointer; font-size: 16px; }
+        #result { margin-top: 20px; background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>AI Study Flashcard & Quiz Generator</h1>
+    
+    <textarea id="notes" rows="8" placeholder="Paste your study notes here..."></textarea><br>
+    <button onclick="generateFlashcards()">Generate Flashcards & Quiz</button>
+    
+    <div id="result">Your generated flashcards will appear here...</div>
+
+    <script>
+        async function generateFlashcards() {
+            const notes = document.getElementById('notes').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = "Generating flashcards and quiz... Please wait...";
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'notes=' + encodeURIComponent(notes)
+                });
+                const data = await response.json();
+                
+                if (data.result) {
+                    let text = data.result;
+                    // Clean up markdown and formatting for a professional look
+                    let formatted = text
+                        .replace(/\\n/g, '<br>')
+                        .replace(/###\s*(.*?)(?=<br>|$)/g, '<h2 style="color: #333; margin-top: 25px; border-bottom: 2px solid #007BFF; padding-bottom: 5px;">$1</h2>')
+                        .replace(/\*\*Flashcard\s*(\d+)\*\*/g, '<div style="background: #fff; padding: 15px; margin: 10px 0; border-left: 4px solid #007BFF; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 4px;"><strong>Flashcard $1</strong>')
+                        .replace(/\*\*Question:\*\*/g, '<br><strong>Q:</strong>')
+                        .replace(/\*\*Answer:\*\*/g, '<br><strong>Answer:</strong></div>')
+                        .replace(/\*\*Question\s*(\d+):\*\*/g, '<div style="background: #fff; padding: 15px; margin: 15px 0; border: 1px solid #ddd; border-radius: 6px;"><p style="font-weight: bold; margin-bottom: 10px;">Question $1:</p>')
+                        .replace(/\*\*Correct Answer:\*\*/g, '<p style="margin-top: 10px; color: #28a745; font-weight: bold;">Correct Answer:</p></div>')
+                        .replace(/([A-D]\)\s.*?)(?=<br>|<p>|$)/g, '<label style="display: block; margin: 6px 0; cursor: pointer;"><input type="radio" name="q_option" style="margin-right: 8px;"> $1</label>');
+
+                    resultDiv.innerHTML = formatted;
+                } else {
+                    resultDiv.innerHTML = JSON.stringify(data);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = "Error generating content. Check your terminal.";
+            }
+        }
+    </script>
+</body>
+</html>
